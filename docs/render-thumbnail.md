@@ -103,6 +103,8 @@ let thumbSrc = await omezarr.renderThumbnail(url, targetSize, false, maxSize);
 
 ## Test renderThumbnail()
 
+Here you can test `renderThumbnail()` with your own images.
+
 <ClientOnly>
 <ThumbnailTest />
 </ClientOnly>

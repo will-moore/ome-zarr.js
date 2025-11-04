@@ -107,6 +107,8 @@ async function render() {
     <div :class="$style.row">
       <label for="autoBoost">Auto Boost:</label>
       <input type="checkbox" id="autoBoost" v-model="boostRef" @change="render" />
+    </div>
+    <div :class="$style.row">
       <label for="setMaxSize">Set Max Size:</label>
       <input type="checkbox" id="setMaxSize" v-model="setMaxSize" @change="render" />
       <input :disabled="!setMaxSize" type="range" min="100" max="2000" step="1" v-model="maxSize"
