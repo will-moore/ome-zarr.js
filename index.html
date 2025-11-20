@@ -35,6 +35,7 @@
       }
 
       async function fetchTile(row, col, level, signal) {
+        signal.throwIfAborted();
         console.log("Fetching tile row", row, "col", col, "level", level);
         let xStart = col * TILE_SIZE;
         let yStart = row * TILE_SIZE;
@@ -54,6 +55,7 @@
           undefined,
           { signal }
         );
+        signal.throwIfAborted();
         return dataUrl;
       }
 
@@ -160,6 +162,7 @@
             context.abortController.signal,
           )
           .then((dataURL) => {
+            context.abortController.signal.throwIfAborted();
             context.image.src = dataURL;
           })
           .catch((e) => {
