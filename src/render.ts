@@ -19,15 +19,19 @@ export async function renderThumbnail(
   store: zarr.FetchStore | string,
   targetSize: number | undefined = undefined,
   autoBoost: boolean = false,
-  maxSize: number = 1000
+  maxSize: number = 1000,
+  options: { signal?: AbortSignal } = {}
 ): Promise<string> {
+  const { signal } = options;
+  signal?.throwIfAborted();
   if (typeof store === "string") {
     store = new zarr.FetchStore(store);
   }
 
   // Lets load SMALLEST resolution and render it as a thumbnail
   const datasetIndex = -1;
-  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex);
+  let { multiscale, omero, zarr_version, arr, shapes } = await getMultiscaleWithArray(store, datasetIndex, { signal });
+  signal?.throwIfAborted();
 
   // targetSize is specified, may need to load a different resolution...
   // pick a different dataset level if we want a different size
@@ -72,7 +76,8 @@ export async function renderThumbnail(
       }
     }
     let path = paths[pathIndex];
-    arr = await getArray(store, path, zarr_version);
+    arr = await getArray(store, path, zarr_version, { signal });
+    signal?.throwIfAborted();
   }
 
   // we want to remove any start/end values from window, to calculate min/max
@@ -98,7 +103,10 @@ export async function renderImage(
     sliceIndices: {[k: string]: (number | [number, number] | undefined)}  = {},
     autoBoost: boolean = false,
     originalShape?: number[],
+    options: { signal?: AbortSignal } = {},
   ) {
+    const { signal } = options;
+    signal?.throwIfAborted();
     // Main rendering function...
     // We have the zarr Array already in hand, axes for dimensions
     // and omero for rendering settings
@@ -154,8 +162,9 @@ export async function renderImage(
     let chSlices = getSlices(activeChannelIndices, shape, axesNames, sliceIndices, originalShape);
   
     // Wait for all chunks to be fetched...
-    let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice));
+    let promises = chSlices.map((chSlice: any) => zarr.get(arr, chSlice, { opts: { signal }}));
     let ndChunks = await Promise.all(promises);
+    signal?.throwIfAborted();
   
     // Use start/end values from 'omero' if available, otherwise calculate min/max
     let minMaxValues = activeChannelIndices.map((chIndex:number, i:number) => {
