@@ -34,7 +34,7 @@
         zarrArrays["" + datasetResolution] = omeZarrInfo;
       }
 
-      function fetchTile(row, col, level) {
+      async function fetchTile(row, col, level, signal) {
         console.log("Fetching tile row", row, "col", col, "level", level);
         let xStart = col * TILE_SIZE;
         let yStart = row * TILE_SIZE;
@@ -45,14 +45,16 @@
         let omeZarrInfo = zarrArrays[(level).toString()];
         // TODO: handle omeZarrInfo is undefined (level out of range)
         let bigArray = omeZarrInfo.arr;
-        let promise = omezarr.renderImage(
+        let dataUrl = await omezarr.renderImage(
           bigArray,
           omeZarrInfo.multiscale.axes,
           omeZarrInfo.omero,
           sliceIndices,
-          level
+          false,
+          undefined,
+          { signal }
         );
-        return promise;
+        return dataUrl;
       }
 
       //see https://stackoverflow.com/questions/41996814/how-to-abort-a-fetch-request
@@ -88,19 +90,27 @@
           // namespace where we attach our properties to avoid
           // collision with API
           let context = imageJob.userData;
+          context.abortController = new AbortController();
           context.image = new Image();
 
           // in all scenarios, unless abort() is called, make
           // sure imageJob.finish() gets executed!
-          context.image.onerror = context.image.onabort = function () {
+          context.image.onerror = function (reason) {
+            console.error("Error loading image:", reason);
             imageJob.finish(
               null,
-              context.promise,
-              "Failed to parse tile data as an Image"
+              null,
+              `Failed to parse tile data as an Image: ${reason}`
             );
           };
+          context.image.onabort = function () {
+            if (!context.abortController.signal.aborted) {
+              context.abortController.abort();
+            }
+            console.warn(`Image loading aborted: ${context.abortController.signal.reason}`);
+          };
           context.image.onload = function () {
-            imageJob.finish(context.image, context.promise);
+            imageJob.finish(context.image, null, null);
           };
 
           function createErrorImageURL(e) {
@@ -146,19 +156,24 @@
           fetchTile(
             parseInt(info.split("/")[2]),
             parseInt(info.split("/")[1]),
-            MAX_LEVEL - parseInt(info.split("/")[0])
+            MAX_LEVEL - parseInt(info.split("/")[0]),
+            context.abortController.signal,
           )
           .then((dataURL) => {
             context.image.src = dataURL;
           })
           .catch((e) => {
-            console.error("Error fetching tile:", e);
-            context.image.src = createErrorImageURL(e);
+            if (context.abortController.signal.aborted) {
+              console.warn("Fetch aborted, not an error:", e);
+            } else {
+              console.error("Error fetching tile:", e);
+              context.image.src = createErrorImageURL(e);
+            }
           });
         },
         downloadTileAbort: function (imageJob) {
-          //we can abort thanks to myFetch() implementation
-          imageJob.userData.promise.controller.abort();
+          context.abortController.abort();
+          context.image.src = ""; // invokes onabort
         },
       });
 
