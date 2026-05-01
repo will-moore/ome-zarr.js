@@ -12,63 +12,90 @@ import {
 } from "./utils";
 
 export type Color = [number, number, number] | [number, number, number, number];
+export type Blending = "additive" | "translucent";
 
 export function renderChannel(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   func: (value: number) => Color,
-  target?: Uint8ClampedArray
+  options?: { target?: Uint8ClampedArray; blending?: Blending }
 ): Uint8ClampedArray {
+  const { target, blending = "additive" } = options ?? {};
+
   const [height, width] = chunk.shape;
-  if (!target) {
-    target = new Uint8ClampedArray(4 * height * width).fill(0);
-  }
+  const data = target ?? new Uint8ClampedArray(4 * height * width).fill(0);
   const n = height * width;
   for (let i = 0; i < n; i++) {
     const value = Number(chunk.data[i]!);
-    const [r, g, b, a] = func(value);
-    const offset = 4 * i;
-    target[offset] = r;
-    target[offset + 1] = g;
-    target[offset + 2] = b;
-    target[offset + 3] = a ?? 255;
+    const [r, g, b, alpha = 255] = func(value);
+    const alphaSrc = data[4 * i + 3] / 255;
+    const alphaDst = (alpha ?? 255) / 255;
+    if (blending === "additive") {
+      // Additive blending
+      data[4 * i] = Math.min(data[4 * i] * alphaSrc + r, 255);
+      data[4 * i + 1] = Math.min(data[4 * i + 1] * alphaSrc + g, 255);
+      data[4 * i + 2] = Math.min(data[4 * i + 2] * alphaSrc + b, 255);
+      data[4 * i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
+    } else if (blending === "translucent") {
+      // A over B (Porter & Duff, 1984)
+      // https://en.wikipedia.org/wiki/Alpha_compositing
+      data[4 * i] = r * alphaDst + data[4 * i] * alphaSrc * (1 - alphaDst);
+      data[4 * i + 1] =
+        g * alphaDst + data[4 * i + 1] * alphaSrc * (1 - alphaDst);
+      data[4 * i + 2] =
+        b * alphaDst + data[4 * i + 2] * alphaSrc * (1 - alphaDst);
+      data[4 * i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
+    } else {
+      throw new Error("Invalid blending mode");
+    }
   }
-  return target;
+  return data;
 }
 
 export function renderChannelWithLUT(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   lut: Color[],
-  range?: [number, number],
-  target?: Uint8ClampedArray
+  options?: {
+    target?: Uint8ClampedArray;
+    blending?: Blending;
+    range?: [number, number];
+  }
 ): Uint8ClampedArray {
   if (lut.length !== 256) {
     throw new Error("LUT must have 256 entries");
   }
-  const [min, max] = range ?? [0, 255];
-  if (min >= max) {
-    throw new Error("Invalid range");
-  }
+  const { target, blending = "additive", range = [0, 255] } = options ?? {};
 
   function func(value: number): Color {
+    const [min, max] = range;
     if (value < min) value = min;
     if (value > max) value = max;
     value = Math.round((255 * (value - min)) / (max - min));
     return lut[value];
   }
 
-  return renderChannel(chunk, func, target);
+  return renderChannel(chunk, func, { target, blending });
 }
 
 export function renderChannelWithColormap(
   chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
   colormap: Map<number, Color>,
-  fillValue?: Color,
-  target?: Uint8ClampedArray
-): Uint8ClampedArray {
-  function func(value: number): Color {
-    return colormap.get(value) ?? fillValue ?? [0, 0, 0, 0];
+  options?: {
+    target?: Uint8ClampedArray;
+    blending?: Blending;
+    fillValue?: Color;
   }
-  return renderChannel(chunk, func, target);
+): Uint8ClampedArray {
+  const {
+    target,
+    blending = "additive",
+    fillValue = [0, 0, 0, 0],
+  } = options ?? {};
+
+  function func(value: number): Color {
+    return colormap.get(value) ?? fillValue;
+  }
+
+  return renderChannel(chunk, func, { target, blending });
 }
 
 export async function getRgba(
