@@ -11,6 +11,65 @@ import {
   MAX_CHANNELS,
 } from "./utils";
 
+export type Color = [number, number, number] | [number, number, number, number];
+
+export function renderChannel(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  func: (value: number) => Color,
+  target?: Uint8ClampedArray
+): Uint8ClampedArray {
+  const [height, width] = chunk.shape;
+  if (!target) {
+    target = new Uint8ClampedArray(4 * height * width).fill(0);
+  }
+  const n = height * width;
+  for (let i = 0; i < n; i++) {
+    const value = Number(chunk.data[i]!);
+    const [r, g, b, a] = func(value);
+    const offset = 4 * i;
+    target[offset] = r;
+    target[offset + 1] = g;
+    target[offset + 2] = b;
+    target[offset + 3] = a ?? 255;
+  }
+  return target;
+}
+
+export function renderChannelWithLUT(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  lut: Color[],
+  range?: [number, number],
+  target?: Uint8ClampedArray
+): Uint8ClampedArray {
+  if (lut.length !== 256) {
+    throw new Error("LUT must have 256 entries");
+  }
+  const [min, max] = range ?? [0, 255];
+  if (min >= max) {
+    throw new Error("Invalid range");
+  }
+
+  function func(value: number): Color {
+    if (value < min) value = min;
+    if (value > max) value = max;
+    value = Math.round((255 * (value - min)) / (max - min));
+    return lut[value];
+  }
+
+  return renderChannel(chunk, func, target);
+}
+
+export function renderChannelWithColormap(
+  chunk: zarr.Chunk<zarr.NumberDataType | zarr.BigintDataType>,
+  colormap: Map<number, Color>,
+  fillValue?: Color,
+  target?: Uint8ClampedArray
+): Uint8ClampedArray {
+  function func(value: number): Color {
+    return colormap.get(value) ?? fillValue ?? [0, 0, 0, 0];
+  }
+  return renderChannel(chunk, func, target);
+}
 
 export async function getRgba(
   arr: zarr.Array<any, zarr.Readable>,
