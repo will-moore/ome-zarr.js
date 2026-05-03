@@ -135,7 +135,7 @@ export async function getRgba(
   return { data, width, height };
 }
 
-export async function convertRbgDataToDataUrl(
+export async function convertRgbDataToDataUrl(
   rbgData: Uint8ClampedArray,
   width: number
 ): Promise<string> {

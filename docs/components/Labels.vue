@@ -37,7 +37,7 @@ onMounted(async () => {
   blackToTransparentRgba(labelRgba.data);
 
   // convert the rgba array back to image src
-  labelSrc.value = await omezarr.convertRbgDataToDataUrl(
+  labelSrc.value = await omezarr.convertRgbDataToDataUrl(
     labelRgba.data,
     labelRgba.width
   );

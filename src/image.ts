@@ -3,7 +3,7 @@ import * as zarr from "zarrita";
 import { ImageAttrs, ImageAttrsV5, OmeAttrs, Multiscale, Omero, Axis } from "./types/ome";
 import { openArray, openGroup, createOmero } from "./utils";
 // import { renderImage } from "./api";
-import { convertRbgDataToDataUrl, getRgba } from "./render";
+import { convertRgbDataToDataUrl, getRgba } from "./render";
 import { generateNeuroglancerStateForOmeZarr, LayerType } from "./helper";
 
 export class NgffImage {
@@ -441,6 +441,6 @@ export class NgffImage {
   ): Promise<string> {
 
     let { data, width } = await this.renderRgba(options);
-    return convertRbgDataToDataUrl(data, width);
+    return convertRgbDataToDataUrl(data, width);
   }
 }

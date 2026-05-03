@@ -21,4 +21,4 @@ export {
 export { LUTS, getLuts } from "./luts";
 export { NgffImage } from "./image";
 export { renderThumbnail, renderImage, render } from "./api";
-export { convertRbgDataToDataUrl } from "./render";
+export { convertRgbDataToDataUrl } from "./render";
