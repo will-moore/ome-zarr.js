@@ -121,7 +121,7 @@
         let labelRgba = await labelImage.renderRgba({targetSize: 300});
         blackToTransparentRgba(labelRgba.data);
 
-        let labelSrc = await omezarr.convertRbgDataToDataUrl(labelRgba.data, labelRgba.width);
+        let labelSrc = await omezarr.convertRgbDataToDataUrl(labelRgba.data, labelRgba.width);
         html = `<a href="${imgUrl}labels/${labelPaths[0]}"><img class="checquers" src="${labelSrc}" /></a>`;
         document.getElementById("labels").innerHTML += html;
 

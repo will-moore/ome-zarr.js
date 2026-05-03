@@ -2,7 +2,7 @@
 import * as zarr from "zarrita";
 
 import { Axis, Channel, OmeAttrs, Omero } from "./types/ome";
-import { getRgba, convertRbgDataToDataUrl } from "./render";
+import { getRgba, convertRgbDataToDataUrl } from "./render";
 import { NgffImage } from "./image";
 
 
@@ -84,5 +84,5 @@ export async function renderImage(
     originalShape,
     autoBoost
   );
-  return convertRbgDataToDataUrl(data, width);
+  return convertRgbDataToDataUrl(data, width);
 }

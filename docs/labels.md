@@ -35,7 +35,7 @@ let {data, width} = await img.renderRgba({targetSize: 300);
 blackToTransparentRgba(data)
 
 // convert the rgba array back to image src
-let labelSrc = await omezarr.convertRbgDataToDataUrl(data, width);
+let labelSrc = await omezarr.convertRgbDataToDataUrl(data, width);
 document.getElementById("labelImg").src = labelSrc;
 ```
 
