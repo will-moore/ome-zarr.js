@@ -24,27 +24,30 @@ export function renderChannel(
 
   const [height, width] = chunk.shape;
   const data = target ?? new Uint8ClampedArray(4 * height * width).fill(0);
-  const n = height * width;
-  for (let i = 0; i < n; i++) {
-    const value = Number(chunk.data[i]!);
+  const n = height * width * 4;
+  let dIndex = 0;
+  for (let i = 0; i < n; i += 4) {
+    // ! in this line suppresses TypeScript error about possible undefined
+    const value = Number(chunk.data[dIndex]!);
+    dIndex += 1;
     const [r, g, b, alpha = 255] = func(value);
-    const alphaSrc = data[4 * i + 3] / 255;
+    const alphaSrc = data[i + 3] / 255;
     const alphaDst = (alpha ?? 255) / 255;
     if (blending === "additive") {
       // Additive blending
-      data[4 * i] = Math.min(data[4 * i] * alphaSrc + r, 255);
-      data[4 * i + 1] = Math.min(data[4 * i + 1] * alphaSrc + g, 255);
-      data[4 * i + 2] = Math.min(data[4 * i + 2] * alphaSrc + b, 255);
-      data[4 * i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
+      data[i] = Math.min(data[i] * alphaSrc + r, 255);
+      data[i + 1] = Math.min(data[i + 1] * alphaSrc + g, 255);
+      data[i + 2] = Math.min(data[i + 2] * alphaSrc + b, 255);
+      data[i + 3] = Math.min(alphaSrc + alphaDst, 1.0) * 255;
     } else if (blending === "translucent") {
       // A over B (Porter & Duff, 1984)
       // https://en.wikipedia.org/wiki/Alpha_compositing
-      data[4 * i] = r * alphaDst + data[4 * i] * alphaSrc * (1 - alphaDst);
-      data[4 * i + 1] =
-        g * alphaDst + data[4 * i + 1] * alphaSrc * (1 - alphaDst);
-      data[4 * i + 2] =
-        b * alphaDst + data[4 * i + 2] * alphaSrc * (1 - alphaDst);
-      data[4 * i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
+      data[i] = r * alphaDst + data[i] * alphaSrc * (1 - alphaDst);
+      data[i + 1] =
+        g * alphaDst + data[i + 1] * alphaSrc * (1 - alphaDst);
+      data[i + 2] =
+        b * alphaDst + data[i + 2] * alphaSrc * (1 - alphaDst);
+      data[i + 3] = (alphaDst + alphaSrc * (1 - alphaDst)) * 255;
     } else {
       throw new Error("Invalid blending mode");
     }
