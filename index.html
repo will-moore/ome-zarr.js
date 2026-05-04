@@ -139,22 +139,22 @@
       const omezarr = await import("/src/index.ts");
 
 
-      let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
-      // Load the zarr.json to test {attrs} option.
-      let zarrJson = await fetch(url + "/zarr.json").then((res) => res.json());
-      let attrs = zarrJson.attributes; // v0.6 (zarr v3) nested attributes
-      // This loads the first dataset array, so we know the image dimensions,
-      let i = await omezarr.NgffImage.load(url, {attrs});
-      console.log("VERSION", i.getVersion());
-      console.log("ZARR VERSION", i.getZarrVersion());
-      console.log("SCALES", i.getScales());
-      console.log("SHAPE", await i.getShape());
-      console.log("SHAPES", await i.calcShapes());
-      console.log("NEUROGLANCER URL", await i.getNeuroglancerUrl());
+      // let url = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zarr";
+      // // Load the zarr.json to test {attrs} option.
+      // let zarrJson = await fetch(url + "/zarr.json").then((res) => res.json());
+      // let attrs = zarrJson.attributes; // v0.6 (zarr v3) nested attributes
+      // // This loads the first dataset array, so we know the image dimensions,
+      // let i = await omezarr.NgffImage.load(url, {attrs});
+      // console.log("VERSION", i.getVersion());
+      // console.log("ZARR VERSION", i.getZarrVersion());
+      // console.log("SCALES", i.getScales());
+      // console.log("SHAPE", await i.getShape());
+      // console.log("SHAPES", await i.calcShapes());
+      // console.log("NEUROGLANCER URL", await i.getNeuroglancerUrl());
 
-      renderLabels();
+      // renderLabels();
 
-      renderSimilarThumbs();
+      // renderSimilarThumbs();
 
       const OXZ = "https://livingobjects.ebi.ac.uk/bioimaging-sandbox/testbucket-bia/test-ozx/6001240.ozx";
       const IDR0079_2_LABELS = "https://livingobjects.ebi.ac.uk/idr/zarr/v0.4/idr0079A/idr0079_images.zarr/2/";
@@ -181,8 +181,8 @@
 
       // Thumbnails...
       const urls = [
-        OXZ,
-        IDR0079_2_LABELS,
+        // OXZ,
+        // IDR0079_2_LABELS,
         IDR0079_2_LABELS + "labels/0/",
         IDR0077,
         IDR0083,
@@ -215,7 +215,7 @@
             url = ZipFileStore.fromUrl(url);
           }
           let ngffImg = await omezarr.NgffImage.load(url);
-          let thumbSrc = await ngffImg.render({targetSize: 100, signal});
+          let thumbSrc = await ngffImg.render({targetSize: 500, signal});
           let ngHref = typeof url === "string" ? await ngffImg.getNeuroglancerUrl() : "no url";
           let html = `<a target="_blank" href="${ngHref}"><img title="${url}" src="${thumbSrc}" /></a>`;
           document.getElementById("thumbnails").innerHTML += html;
@@ -227,94 +227,94 @@
         }
       }
 
-      let thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 7});
-      let bigImg = `<img src="${thumbSrc}" />`;
-      document.getElementById("bigThumbnails").innerHTML += bigImg;
+      // let thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 7});
+      // let bigImg = `<img src="${thumbSrc}" />`;
+      // document.getElementById("bigThumbnails").innerHTML += bigImg;
 
-      thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 6});
-      bigImg = `<img src="${thumbSrc}" />`;
-      document.getElementById("bigThumbnails").innerHTML += bigImg;
-      // legacy API - keep a single test for this...
-      thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
-      bigImg = `<img src="${thumbSrc}" />`;
-      document.getElementById("bigThumbnails").innerHTML += bigImg;
+      // thumbSrc = await omezarr.render(IDR0066, undefined, {datasetIndex: 6});
+      // bigImg = `<img src="${thumbSrc}" />`;
+      // document.getElementById("bigThumbnails").innerHTML += bigImg;
+      // // legacy API - keep a single test for this...
+      // thumbSrc = await omezarr.renderThumbnail(IDR0066, 300, true);
+      // bigImg = `<img src="${thumbSrc}" />`;
+      // document.getElementById("bigThumbnails").innerHTML += bigImg;
 
-      // Check we can set channel setting on 2D image (no "c" axis)
-      let imgChick = await omezarr.NgffImage.load(IDR0066);
-      imgChick.setChannelLut(0, "fire.lut");
-      let chickSrc = await imgChick.render({targetSize: 300});
-      document.getElementById("bigThumbnails").innerHTML += `<img src="${chickSrc}" />`;
+      // // Check we can set channel setting on 2D image (no "c" axis)
+      // let imgChick = await omezarr.NgffImage.load(IDR0066);
+      // imgChick.setChannelLut(0, "fire.lut");
+      // let chickSrc = await imgChick.render({targetSize: 300});
+      // document.getElementById("bigThumbnails").innerHTML += `<img src="${chickSrc}" />`;
 
-      // For rendering Images, we want to keep the zarr array in hand...
-      // const store62 = new zarr.FetchStore(IDR0062);
-      const img = await omezarr.NgffImage.load(IDR0062);
-      // arr will be full-sized array by default
-      // const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
-      // turn OFF all channels
-      for (let channel in img.omero.channels) {
-        img.setChannelActive(channel, false);
-      }
-      img.setChannelColor(0, "00FF00");
-      img.setChannelColor(1, "FF00FF");
-      // progressively turn channels on and render...
-      for (let channel in img.omero.channels) {
-        img.setChannelActive(channel, true);
-        let src = await img.render({targetSize: 300});
-        let html = `<img src="${src}" />`;
-        document.getElementById("splitview").innerHTML += html;
-      };
+      // // For rendering Images, we want to keep the zarr array in hand...
+      // // const store62 = new zarr.FetchStore(IDR0062);
+      // const img = await omezarr.NgffImage.load(IDR0062);
+      // // arr will be full-sized array by default
+      // // const {arr, omero, multiscale, shapes, zarr_version} = await omezarr.getMultiscaleWithArray(store62);
+      // // turn OFF all channels
+      // for (let channel in img.omero.channels) {
+      //   img.setChannelActive(channel, false);
+      // }
+      // img.setChannelColor(0, "00FF00");
+      // img.setChannelColor(1, "FF00FF");
+      // // progressively turn channels on and render...
+      // for (let channel in img.omero.channels) {
+      //   img.setChannelActive(channel, true);
+      //   let src = await img.render({targetSize: 300});
+      //   let html = `<img src="${src}" />`;
+      //   document.getElementById("splitview").innerHTML += html;
+      // };
 
-      // Inverted image - orthogonal view
-      img.setChannelInverted(0, true);
-      let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
-      let orthSrc = await img.render({targetSize: 300, slices: slices62});
-      let html = `<img src="${orthSrc}" />`;
-      document.getElementById("splitview").innerHTML += html;
+      // // Inverted image - orthogonal view
+      // img.setChannelInverted(0, true);
+      // let slices62 = {"x": 130, "z": [0, 236]};   // "y" is full range by default
+      // let orthSrc = await img.render({targetSize: 300, slices: slices62});
+      // let html = `<img src="${orthSrc}" />`;
+      // document.getElementById("splitview").innerHTML += html;
 
-      // get a smaller array for Z-stack
-      console.log("idr0062 shapes", img.shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
-      // const paths = img.multiscale.datasets.map((d) => d.path);
-      console.log("idr0062 paths", img.paths);
-      const pathOrIndex = 1;
-      const arr200 = await img.openArray(pathOrIndex);
-      // turn first channel ON, use LUT
-      img.setChannelActive(0, true);
-      img.setChannelActive(1, false);
-      img.setChannelLut(0, "16_colors.lut");
-      img.setChannelInverted(0, false);
-      // TODO: use dim names from multiscale
-      let sizeZ = arr200.shape.at(-3);
-      let interval = Math.ceil(sizeZ / 7);
-      for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
-        img.setZIndex(zSlice);
-        let src = await img.render({arr: arr200});
-        let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
-        document.getElementById("stack").innerHTML += html;
-      }
+      // // get a smaller array for Z-stack
+      // console.log("idr0062 shapes", img.shapes); // [2, 236, 275, 271], [2, 236, 138, 136], [2, 236, 69, 68]
+      // // const paths = img.multiscale.datasets.map((d) => d.path);
+      // console.log("idr0062 paths", img.paths);
+      // const pathOrIndex = 1;
+      // const arr200 = await img.openArray(pathOrIndex);
+      // // turn first channel ON, use LUT
+      // img.setChannelActive(0, true);
+      // img.setChannelActive(1, false);
+      // img.setChannelLut(0, "16_colors.lut");
+      // img.setChannelInverted(0, false);
+      // // TODO: use dim names from multiscale
+      // let sizeZ = arr200.shape.at(-3);
+      // let interval = Math.ceil(sizeZ / 7);
+      // for (let zSlice = interval; zSlice <= sizeZ; zSlice += interval) {
+      //   img.setZIndex(zSlice);
+      //   let src = await img.render({arr: arr200});
+      //   let html = `<img src="${src}" title="Z: ${zSlice}"/>`;
+      //   document.getElementById("stack").innerHTML += html;
+      // }
 
-      // BIG thumbnail (birds eye view)
-      const storeBig = new zarr.FetchStore(IDR0083);
-      let bigThumb = await omezarr.render(storeBig, 400);
-      document.getElementById("bigThumb").src = bigThumb;
-      // BIG image, Load full-resolution array
-      // let big = await omezarr.getMultiscaleWithArray(storeBig);
-      let tiledImg = await omezarr.NgffImage.load(IDR0083);
-      console.log("big image shapes (undefined)", tiledImg.shapes);
-      await tiledImg.calcShapes();
-      console.log("big image shapes", tiledImg.shapes);
-      // Full-sized image is 144384	x 93184
-      const dsIndex = 0; // pick the largest resolution
-      let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
-      let bigImageSrc = await tiledImg.render({arrayPathOrIndex: dsIndex, slices: sliceIndices});
-      document.getElementById("bigImages").innerHTML += `<img src="${bigImageSrc}" />`;
+      // // BIG thumbnail (birds eye view)
+      // const storeBig = new zarr.FetchStore(IDR0083);
+      // let bigThumb = await omezarr.render(storeBig, 400);
+      // document.getElementById("bigThumb").src = bigThumb;
+      // // BIG image, Load full-resolution array
+      // // let big = await omezarr.getMultiscaleWithArray(storeBig);
+      // let tiledImg = await omezarr.NgffImage.load(IDR0083);
+      // console.log("big image shapes (undefined)", tiledImg.shapes);
+      // await tiledImg.calcShapes();
+      // console.log("big image shapes", tiledImg.shapes);
+      // // Full-sized image is 144384	x 93184
+      // const dsIndex = 0; // pick the largest resolution
+      // let sliceIndices = {"x": [50000, 50500], "y": [30000, 30500]};
+      // let bigImageSrc = await tiledImg.render({arrayPathOrIndex: dsIndex, slices: sliceIndices});
+      // document.getElementById("bigImages").innerHTML += `<img src="${bigImageSrc}" />`;
 
-      // show luts
-      omezarr.getLuts().forEach((lut) => {
-        let src = lut.png;
-        let html = `<div class="lut"><legend>${lut.name}</legend>
-          <img class="lut" src="${src}" title="${lut.name}" /></div>`;
-        document.getElementById("luts").innerHTML += html;
-      });
+      // // show luts
+      // omezarr.getLuts().forEach((lut) => {
+      //   let src = lut.png;
+      //   let html = `<div class="lut"><legend>${lut.name}</legend>
+      //     <img class="lut" src="${src}" title="${lut.name}" /></div>`;
+      //   document.getElementById("luts").innerHTML += html;
+      // });
 
     </script>
   </body>
