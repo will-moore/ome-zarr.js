@@ -223,20 +223,20 @@ export function renderTo8bitArray(
         // rgb[i] is 0-255...
         let v;
         if (lutRgb) {
-          let val = (fraction * 255) << 0;
+          let val = Math.round(fraction * 255);
           v = lutRgb[val][i];
           if (inverted) {
             v = 255 - v;
           }
         } else {
-          v = (fraction * rgb[i]) << 0;
+          v = Math.round(fraction * rgb[i]);
           // invert. If channel is 'red' only, don't invert green & blue!
           if (inverted && rgb[i] != 0) {
             v = 255 - v;
           }
         }
-        // increase pixel intensity if value is higher
-        rgba[offset * 4 + i] = Math.max(rgba[offset * 4 + i], v);
+        // add values together for each channel, with max at 255
+        rgba[offset * 4 + i] = Math.min(rgba[offset * 4 + i] + v, 255);
       }
       rgba[offset * 4 + 3] = 255; // alpha
       offset += 1;
