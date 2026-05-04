@@ -10,6 +10,7 @@ import {
   renderTo8bitArray,
   MAX_CHANNELS,
 } from "./utils";
+import { getLutRgb } from "./luts";
 
 export type Color = [number, number, number] | [number, number, number, number];
 export type Blending = "additive" | "translucent";
@@ -207,7 +208,20 @@ export async function getRgba(
   );
 
   // Render to 8bit rgb array
+  // compare timing for new renderTo8bitArray2 vs old renderTo8bitArray, and also compare outputs for testing
+  console.time("renderTo8bitArray");
   let data = renderTo8bitArray(
+    ndChunks,
+    minMaxValues,
+    rgbColors,
+    luts,
+    inverteds,
+    false
+  );
+  console.timeEnd("renderTo8bitArray");
+
+  console.time("renderTo8bitArray2");
+  let data2 = renderTo8bitArray2(
     ndChunks,
     minMaxValues,
     rgbColors,
@@ -215,10 +229,61 @@ export async function getRgba(
     inverteds,
     autoBoost
   );
+  console.timeEnd("renderTo8bitArray2");
+  console.log("ch", ndChunks.length, "shape", ndChunks[0].shape);
+
+  let mismatches = [];
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] !== data2[i]) {
+      mismatches.push(data2[i] - data[i]);
+    }
+  }
+  if (mismatches.length > 0) {
+    const formattedMismatchCount = mismatches.length.toLocaleString();
+    const formattedDataLength = data.length.toLocaleString();
+    console.warn(
+      `Warning: outputs differ at ${formattedMismatchCount} / ${formattedDataLength} pixels`, mismatches.slice(mismatches.length/2, mismatches.length/2 + 1000)
+    );
+  }
 
   const height = ndChunks[0].shape[0];
   const width = ndChunks[0].shape[1];
   return { data, width, height };
+}
+
+export function renderTo8bitArray2(
+  ndChunks: any,
+  minMaxValues: Array<[number, number]>,
+  colors: Array<[number, number, number]>,
+  luts: Array<string | undefined> | undefined,
+  inverteds: Array<boolean> | undefined,
+  autoBoost: boolean = false
+): Uint8ClampedArray {
+  // This is new version of renderTo8bitArray
+  // For each channel in ndChunks...
+
+  let masterLuts = colors.map((color, i) => {
+    let lutName = luts?.length ? luts[i] : undefined;
+    let lut: Color[];
+    if (lutName) {
+      lut = getLutRgb(lutName as string) as Color[];
+    } else {
+      lut = Array.from({ length: 256 }, (_, i) => [color[0] * i/255, color[1] * i/255, color[2] * i/255, 255]);
+    }
+    if (inverteds && inverteds[i]) {
+      lut = lut.reverse() as Color[];
+    }
+    return lut;
+  });
+
+  // init the rgba array with first channel, then blend in subsequent channels
+  let rgba = renderChannelWithLUT(ndChunks[0], masterLuts[0], { range: minMaxValues[0] })
+  for (let i = 1; i < ndChunks.length; i++) {
+    let channelRgba = renderChannelWithLUT(ndChunks[i], masterLuts[i], { blending: "additive", target: rgba, range: minMaxValues[i] });
+    rgba = channelRgba;
+  }
+
+  return rgba;
 }
 
 export async function convertRgbDataToDataUrl(
